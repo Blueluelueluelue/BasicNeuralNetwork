@@ -5,6 +5,7 @@ import parser.Node;
 import parser.Parser;
 import parser.ParserTools;
 import trainset.TrainSet;
+import mnist.Mnist;
 
 import java.io.*;
 import java.util.ArrayList;
@@ -206,13 +207,13 @@ public class Network {
         Network ne = new Network(si);
 
         for (int i = 1; i < ne.NETWORK_SIZE; i++) {
-            String biases = p.getValue(new String[] { "Network", "Layers", new String(i + ""), "biases" }, "values");
+            String biases = p.getValue(new String[] { "Network", "Layers", i + "", "biases" }, "values");
             double[] bias = ParserTools.parseDoubleArray(biases);
             ne.bias[i] = bias;
 
             for(int n = 0; n < ne.NETWORK_LAYER_SIZE[i]; n++){
 
-                String current = p.getValue(new String[] { "Network", "Layers", new String(i + ""), "weights" }, ""+n);
+                String current = p.getValue(new String[] { "Network", "Layers", i + "", "weights" }, ""+n);
                 double[] val = ParserTools.parseDoubleArray(current);
 
                 ne.weights[i][n] = val;
@@ -221,6 +222,33 @@ public class Network {
         p.close();
         return ne;
 
+    }
+
+    public static void createTestCSV(String filePath, int rows) {
+        int rowSize = (int) (Math.random() * 7) + 3;
+        int targetSize = (int) Math.log(rows) + 10;//(int) (Math.random() * (rows/100) - 2) + 2;
+        double[] targetPool = new double[targetSize];
+
+        for (int i = 0; i < targetSize; i++) {
+            targetPool[i] = Math.random();
+        }
+
+        try {
+            FileWriter wr = new FileWriter(filePath);
+            for (int i = 0; i < rows; i++) {
+                String line = "";
+                for (int j = 0; j < rowSize - 1; j++) {
+                    line += String.format("%1.2f,", Math.random());
+                }
+                int index = (int) (Math.random() * targetSize);
+                line += String.format("%1.2f\n", targetPool[index]);
+
+                wr.write(line);
+            }
+            wr.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     public static ArrayList<String[]> loadCSV(String filePath) {
@@ -293,7 +321,7 @@ public class Network {
                     inputs[j] = Double.parseDouble(s[j]);
                 }
                 double[] targets = new double[distinctTargets.length];
-                int index = linearSearch(targetCands, t);
+                int index = linearSearch(distinctTargets, t);
                 if (index != -1) {
                     targets[index] = 1d;
                 }
@@ -312,9 +340,30 @@ public class Network {
 
     public static void main(String[] args) {
         String path = new File("").getAbsolutePath() + "/res/testCSV.csv";
-        ArrayList<String[]> fileContent = loadCSV(path);
-        TrainSet set = parseCSV(fileContent);
-        System.out.println(set);
+        String path2 = new File("").getAbsolutePath() + "/res/test2CSV.csv";
+
+        try {
+            ArrayList<String[]> fileContent = loadCSV(path2);
+            for (String[] strarr : fileContent) {
+                for (String s : strarr) {
+                    System.out.print(s + " ");
+                }
+                System.out.println();
+            }
+            TrainSet set = parseCSV(fileContent);
+            if (set != null) {
+                int in = set.INPUT_SIZE;
+                int out = set.OUTPUT_SIZE;
+                Network network = new Network(in, in - 1, in - 2, in / 2, out);
+                Mnist.trainData(network, set, 10, 500, 1000);
+                Mnist.testTrainSet(network, set.extractBatch(200), 10);
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+//        createTestCSV(path2, 20000);
 
         /*for (String[] strarr : fileContent) {
             for (String s : strarr) {
@@ -326,63 +375,9 @@ public class Network {
 
 
         /*Network network = new Network(4, 3, 3, 2);
-        /*Network network = new Network(4, 3, 3, 2);
-
-        double[][] inputs = new double[][]{
-                {DataTypes.Outlook.SUNNY, DataTypes.Temp.HOT, DataTypes.Humidity.HIGH, DataTypes.Wind.WEAK},
-                {DataTypes.Outlook.SUNNY, DataTypes.Temp.HOT, DataTypes.Humidity.HIGH, DataTypes.Wind.STRONG},
-                {DataTypes.Outlook.OVERCAST, DataTypes.Temp.HOT, DataTypes.Humidity.HIGH, DataTypes.Wind.WEAK},
-                {DataTypes.Outlook.RAINY, DataTypes.Temp.MILD, DataTypes.Humidity.HIGH, DataTypes.Wind.WEAK},
-                {DataTypes.Outlook.RAINY, DataTypes.Temp.COOL, DataTypes.Humidity.NORMAL, DataTypes.Wind.WEAK},
-                {DataTypes.Outlook.RAINY, DataTypes.Temp.COOL, DataTypes.Humidity.NORMAL, DataTypes.Wind.STRONG},
-                {DataTypes.Outlook.OVERCAST, DataTypes.Temp.COOL, DataTypes.Humidity.NORMAL, DataTypes.Wind.STRONG},
-                {DataTypes.Outlook.SUNNY, DataTypes.Temp.MILD, DataTypes.Humidity.HIGH, DataTypes.Wind.WEAK},
-                {DataTypes.Outlook.SUNNY, DataTypes.Temp.COOL, DataTypes.Humidity.NORMAL, DataTypes.Wind.WEAK},
-                {DataTypes.Outlook.RAINY, DataTypes.Temp.MILD, DataTypes.Humidity.NORMAL, DataTypes.Wind.WEAK},
-                {DataTypes.Outlook.SUNNY, DataTypes.Temp.MILD, DataTypes.Humidity.NORMAL, DataTypes.Wind.STRONG},
-                {DataTypes.Outlook.OVERCAST, DataTypes.Temp.MILD, DataTypes.Humidity.HIGH, DataTypes.Wind.STRONG},
-                {DataTypes.Outlook.OVERCAST, DataTypes.Temp.HOT, DataTypes.Humidity.NORMAL, DataTypes.Wind.WEAK},
-                {DataTypes.Outlook.RAINY, DataTypes.Temp.MILD, DataTypes.Humidity.HIGH, DataTypes.Wind.STRONG}
-        };
 
 
-        // 0 means the probability of 0% and 1 means 100%
-        // Examaple {0.0, 1.0} means 0% probability of YES and 100% probability of NO
-        double[][] targets = new double[][]{
-                {0.0, 1.0},
-                {0.0, 1.0},
-                {1.0, 0.0},
-                {1.0, 0.0},
-                {1.0, 0.0},
-                {0.0, 1.0},
-                {1.0, 0.0},
-                {0.0, 1.0},
-                {1.0, 0.0},
-                {1.0, 0.0},
-                {1.0, 0.0},
-                {1.0, 0.0},
-                {1.0, 0.0},
-                {0.0, 1.0}
-        };
 
-
-        TrainSet set = new TrainSet(inputs[0].length, targets[0].length);
-        set.addData(inputs[0], targets[0]);
-
-        System.out.println(set);*/
-
-/*        int index;
-
-        for (int i = 0; i < inputs.length; i++) {
-            for (int j = 0; j < 40000; j++) {
-                index = (int)(Math.random()*inputs.length);
-                network.train(inputs[index], targets[index], 0.1);
-            }
-        }
-
-        double[][] newData = {
-                {DataTypes.Outlook.RAINY, DataTypes.Temp.COOL, DataTypes.Humidity.HIGH, DataTypes.Wind.WEAK}
-        };
 
         System.out.println("--------------------------TRAINING DATA--------------------------");
         DataTypes.printTopRow();
