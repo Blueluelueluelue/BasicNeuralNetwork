@@ -33,8 +33,8 @@ public class Network {
         this.outputs_derivative = new double[NETWORK_SIZE][];
 
         this.learningRate = 0.3;
-        this.biasBounds = new double[]{0.3, 0.7};
-        this.weightsBounds = new double[]{-0.5, 1.0};
+        this.biasBounds = new double[]{-0.5, 0.7};
+        this.weightsBounds = new double[]{-1.0, 1.0};
 
 
         for (int i = 0; i < NETWORK_SIZE; i++) {
@@ -85,14 +85,13 @@ public class Network {
     }
 
     public void train(TrainSet set, int loops, int batchSize) {
-        if (set.INPUT_SIZE != INPUT_SIZE || set.OUTPUT_SIZE != OUTPUT_SIZE) {
-            return;
-        }
-        for (int i = 0; i < loops; i++) {
+        if(set.INPUT_SIZE != INPUT_SIZE || set.OUTPUT_SIZE != OUTPUT_SIZE) return;
+        for(int i = 0; i < loops; i++) {
             TrainSet batch = set.extractBatch(batchSize);
-            for (int j = 0; j < batch.size(); j++) {
-                this.train(batch.getInput(j), batch.getOutput(j), learningRate);
+            for(int b = 0; b < batchSize; b++) {
+                this.train(batch.getInput(b), batch.getOutput(b), learningRate);
             }
+            System.out.println(MSE(batch));
         }
     }
 
