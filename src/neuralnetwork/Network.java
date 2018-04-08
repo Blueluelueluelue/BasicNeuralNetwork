@@ -1,4 +1,4 @@
-import java.util.Arrays;
+package neuralnetwork;
 
 public class Network {
 
@@ -120,7 +120,9 @@ public class Network {
 
     public static void main(String[] args) {
 
-        Network network = new Network(4, 3, 3, 2);
+
+
+        /*Network network = new Network(4, 3, 3, 2);
 
         double[][] inputs = new double[][]{
                 {DataTypes.Outlook.SUNNY, DataTypes.Temp.HOT, DataTypes.Humidity.HIGH, DataTypes.Wind.WEAK},
@@ -184,6 +186,6 @@ public class Network {
         for (int i = 0; i < newData.length; i++) {
             DataTypes.printRow(i + 1, newData[i]);
             DataTypes.printTennis(network.calculate(newData[i]));
-        }
+        }*/
     }
 }

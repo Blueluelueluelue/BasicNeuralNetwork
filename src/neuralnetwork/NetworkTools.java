@@ -1,3 +1,5 @@
+package neuralnetwork;
+
 public class NetworkTools {
 
     public static double[] createArray(int size, double initValue) {

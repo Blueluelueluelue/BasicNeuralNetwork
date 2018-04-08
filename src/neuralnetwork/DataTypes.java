@@ -1,3 +1,5 @@
+package neuralnetwork;
+
 public class DataTypes {
     private static int[] printVals = {13, 15, 13, 9};
     private static String[] out = {"SUNNY", "OVERCAST", "RAINY"};
