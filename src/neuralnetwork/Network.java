@@ -241,17 +241,89 @@ public class Network {
         return fileContent;
     }
 
+    public static double[] removeRepeats(double[] cand) {
+        ArrayList<Double> temp = new ArrayList<>();
+        for (int i = 0; i < cand.length; i++) {
+            if(!temp.contains(cand[i])) {
+                temp.add(cand[i]);
+            }
+        }
+        double[] res = new double[temp.size()];
+        for (int i = 0; i < res.length; i++) {
+            res[i] = temp.get(i);
+        }
+        return res;
+    }
+
+    public static int linearSearch(double[] arr, double term) {
+        for (int i = 0; i < arr.length; i++) {
+            if (arr[i] == term) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    public static TrainSet parseCSV(ArrayList<String[]> fileContent) {
+
+        int targetSize;
+        double[] targetCands = new double[fileContent.size()];
+
+        for (int i = 0; i < targetCands.length; i++) {
+            String[] s = fileContent.get(i);
+            try {
+                targetCands[i] = Double.parseDouble(s[s.length-1]);
+            } catch (NumberFormatException e) {
+                System.out.println("File contains stuff which are not numbers");
+                e.printStackTrace();
+                return null;
+            }
+        }
+
+        double[] distinctTargets = removeRepeats(targetCands);
+        targetSize = distinctTargets.length;
+        TrainSet set = new TrainSet(fileContent.get(0).length - 1, targetSize);
+
+        try {
+            for (int i = 0; i < fileContent.size(); i++) {
+                String[] s = fileContent.get(i);
+                double t = Double.parseDouble(s[s.length-1]);
+                double[] inputs = new double[s.length-1];
+                for (int j = 0; j < inputs.length; j++) {
+                    inputs[j] = Double.parseDouble(s[j]);
+                }
+                double[] targets = new double[distinctTargets.length];
+                int index = linearSearch(targetCands, t);
+                if (index != -1) {
+                    targets[index] = 1d;
+                }
+
+                set.addData(inputs, targets);
+            }
+        } catch (NumberFormatException e) {
+            System.out.println("File contains stuff which are not numbers");
+            e.printStackTrace();
+            return null;
+        }
+
+        return set;
+    }
+
 
     public static void main(String[] args) {
         String path = new File("").getAbsolutePath() + "/res/testCSV.csv";
         ArrayList<String[]> fileContent = loadCSV(path);
+        TrainSet set = parseCSV(fileContent);
+        System.out.println(set);
 
-        for (String[] strarr : fileContent) {
+        /*for (String[] strarr : fileContent) {
             for (String s : strarr) {
                 System.out.print(s + " ");
             }
             System.out.println();
-        }
+        }*/
+
+
 
         /*Network network = new Network(4, 3, 3, 2);
         /*Network network = new Network(4, 3, 3, 2);
@@ -349,7 +421,5 @@ public class Network {
         } catch (Exception e) {
             e.printStackTrace();
         }*/
-
-        }
     }
 }
