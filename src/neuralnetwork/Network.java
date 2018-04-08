@@ -1,5 +1,11 @@
 package neuralnetwork;
 
+import parser.Attribute;
+import parser.Node;
+import parser.Parser;
+import parser.ParserTools;
+import trainset.TrainSet;
+
 import java.io.*;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -12,6 +18,9 @@ public class Network {
     private double[][] bias;
     private double[][] errors;
     private double[][] outputs_derivative;
+    private double learningRate;
+    private double[] biasBounds;
+    private double[] weightsBounds;
 
     public final int[] NETWORK_LAYER_SIZE;
     public final int INPUT_SIZE;
@@ -30,15 +39,19 @@ public class Network {
         this.errors = new double[NETWORK_SIZE][];
         this.outputs_derivative = new double[NETWORK_SIZE][];
 
+        this.learningRate = 0.3;
+        this.biasBounds = new double[]{-0.5, 0.7};
+        this.weightsBounds = new double[]{-1.0, 1.0};
+
 
         for (int i = 0; i < NETWORK_SIZE; i++) {
             this.outputs[i] = new double[NETWORK_LAYER_SIZE[i]];
             this.errors[i] = new double[NETWORK_LAYER_SIZE[i]];
             this.outputs_derivative[i] = new double[NETWORK_LAYER_SIZE[i]];
-            this.bias[i] = NetworkTools.createRandomArray(NETWORK_LAYER_SIZE[i], 0.3, 0.7);
+            this.bias[i] = NetworkTools.createRandomArray(NETWORK_LAYER_SIZE[i], biasBounds[0], biasBounds[1]);
 
             if(i > 0) {
-                this.weights[i] = NetworkTools.createRandomArray(NETWORK_LAYER_SIZE[i], NETWORK_LAYER_SIZE[i-1], -0.3, 0.7);
+                this.weights[i] = NetworkTools.createRandomArray(NETWORK_LAYER_SIZE[i], NETWORK_LAYER_SIZE[i-1], weightsBounds[0], weightsBounds[1]);
             }
         }
     }
@@ -76,6 +89,38 @@ public class Network {
 
     private double sigmoid(double x) {
         return 1d / ( 1 + Math.exp(-x));
+    }
+
+    public void train(TrainSet set, int loops, int batchSize) {
+        if(set.INPUT_SIZE != INPUT_SIZE || set.OUTPUT_SIZE != OUTPUT_SIZE) return;
+        for(int i = 0; i < loops; i++) {
+            TrainSet batch = set.extractBatch(batchSize);
+            for(int b = 0; b < batchSize; b++) {
+                this.train(batch.getInput(b), batch.getOutput(b), learningRate);
+            }
+            System.out.println(MSE(batch));
+        }
+    }
+
+    public double MSE(double[] input, double[] target) {
+        if (input.length != INPUT_SIZE || target.length != OUTPUT_SIZE) {
+            return 0.0;
+        }
+        calculate(input);
+        double sumE = 0;
+        for (int i = 0; i < target.length; i++) {
+            double e = target[i] - outputs[NETWORK_SIZE-1][i];
+            sumE += e*e;
+        }
+        return sumE / (2d * target.length);
+    }
+
+    public double MSE(TrainSet set) {
+        double sumE = 0;
+        for (int i = 0; i < set.size(); i++) {
+            sumE += MSE(set.getInput(i), set.getOutput(i));
+        }
+        return sumE / set.size();
     }
 
     public void train(double[] inputs, double[] targets, double learningRate) {
@@ -123,6 +168,61 @@ public class Network {
         }
     }
 
+    public void saveNetwork(String fileName) throws Exception {
+        Parser p = new Parser();
+        p.create(fileName);
+        Node root = p.getContent();
+        Node netw = new Node("Network");
+        Node ly = new Node("Layers");
+        netw.addAttribute(new Attribute("sizes", Arrays.toString(this.NETWORK_LAYER_SIZE)));
+        netw.addChild(ly);
+        root.addChild(netw);
+        for (int layer = 1; layer < this.NETWORK_SIZE; layer++) {
+
+            Node c = new Node("" + layer);
+            ly.addChild(c);
+            Node w = new Node("weights");
+            Node b = new Node("biases");
+            c.addChild(w);
+            c.addChild(b);
+
+            b.addAttribute("values", Arrays.toString(this.bias[layer]));
+
+            for (int we = 0; we < this.weights[layer].length; we++) {
+
+                w.addAttribute("" + we, Arrays.toString(weights[layer][we]));
+            }
+        }
+        p.close();
+    }
+
+    public static Network loadNetwork(String fileName) throws Exception {
+
+        Parser p = new Parser();
+
+        p.load(fileName);
+        String sizes = p.getValue(new String[] { "Network" }, "sizes");
+        int[] si = ParserTools.parseIntArray(sizes);
+        Network ne = new Network(si);
+
+        for (int i = 1; i < ne.NETWORK_SIZE; i++) {
+            String biases = p.getValue(new String[] { "Network", "Layers", new String(i + ""), "biases" }, "values");
+            double[] bias = ParserTools.parseDoubleArray(biases);
+            ne.bias[i] = bias;
+
+            for(int n = 0; n < ne.NETWORK_LAYER_SIZE[i]; n++){
+
+                String current = p.getValue(new String[] { "Network", "Layers", new String(i + ""), "weights" }, ""+n);
+                double[] val = ParserTools.parseDoubleArray(current);
+
+                ne.weights[i][n] = val;
+            }
+        }
+        p.close();
+        return ne;
+
+    }
+
     public static ArrayList<String[]> loadCSV(String filePath) {
         String splitBy = ",";
         String line;
@@ -153,6 +253,7 @@ public class Network {
             System.out.println();
         }
 
+        /*Network network = new Network(4, 3, 3, 2);
         /*Network network = new Network(4, 3, 3, 2);
 
         double[][] inputs = new double[][]{
@@ -192,7 +293,13 @@ public class Network {
                 {0.0, 1.0}
         };
 
-        int index;
+
+        TrainSet set = new TrainSet(inputs[0].length, targets[0].length);
+        set.addData(inputs[0], targets[0]);
+
+        System.out.println(set);*/
+
+/*        int index;
 
         for (int i = 0; i < inputs.length; i++) {
             for (int j = 0; j < 40000; j++) {
@@ -218,5 +325,31 @@ public class Network {
             DataTypes.printRow(i + 1, newData[i]);
             DataTypes.printTennis(network.calculate(newData[i]));
         }*/
+        //Network net = new Network(4,3,3,2);
+
+        /*TrainSet set = new TrainSet(4, 2);
+        set.addData(new double[]{0.1,0.2,0.3,0.4}, new double[]{0.9,0.1});
+        set.addData(new double[]{0.9,0.8,0.7,0.6}, new double[]{0.1,0.9});
+        set.addData(new double[]{0.3,0.8,0.1,0.4}, new double[]{0.3,0.7});
+        set.addData(new double[]{0.9,0.8,0.1,0.2}, new double[]{0.7,0.3});
+
+        net.train(set, 10000, 4);
+
+        for(int i = 0; i < 4; i++) {
+            System.out.println(Arrays.toString(net.calculate(set.getInput(i))) + net.MSE(set.getInput(i), set.getOutput(i)));
+        }
+        System.out.println(net.MSE(set));*/
+        /*for(int i = 0; i < 4; i++) {
+            System.out.println(Arrays.toString(net.calculate(set.getInput(i))));
+        }*/
+
+        /*Network network = new Network(4, 3, 3, 2);
+        try {
+            network.saveNetwork("res/NNFile");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }*/
+
+        }
     }
 }

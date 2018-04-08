@@ -47,8 +47,8 @@ public class NetworkTools {
     }
 
     public static Integer[] randomValues(int size, int lower, int upper) {
-        lower--;
 
+        upper++;
         if (size > (upper-lower)) {
             return null;
         }
