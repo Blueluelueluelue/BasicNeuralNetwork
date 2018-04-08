@@ -1,5 +1,10 @@
 package neuralnetwork;
 
+import java.io.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+
 public class Network {
 
     private double[][] outputs;
@@ -118,9 +123,35 @@ public class Network {
         }
     }
 
+    public static ArrayList<String[]> loadCSV(String filePath) {
+        String splitBy = ",";
+        String line;
+        ArrayList<String[]> fileContent = new ArrayList<>();
+        try {
+
+            BufferedReader br = new BufferedReader(new FileReader(filePath));
+
+            while ((line = br.readLine()) != null) {
+                String[] row = line.split(splitBy);
+                fileContent.addAll(Collections.singleton(row));
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return fileContent;
+    }
+
+
     public static void main(String[] args) {
+        String path = new File("").getAbsolutePath() + "/res/testCSV.csv";
+        ArrayList<String[]> fileContent = loadCSV(path);
 
-
+        for (String[] strarr : fileContent) {
+            for (String s : strarr) {
+                System.out.print(s + " ");
+            }
+            System.out.println();
+        }
 
         /*Network network = new Network(4, 3, 3, 2);
 
