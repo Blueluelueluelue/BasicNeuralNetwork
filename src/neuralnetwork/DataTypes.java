@@ -1,7 +1,7 @@
 package neuralnetwork;
 
 public class DataTypes {
-    private static int[] printVals = {13, 15, 13, 9};
+    private static int[] printValues = {13, 15, 13, 9};
     private static String[] out = {"SUNNY", "OVERCAST", "RAINY"};
     private static String[] temp = {"HOW", "MILD", "COOL"};
     private static String[] hum = {"HIGH", "NORMAL"};
@@ -34,8 +34,8 @@ public class DataTypes {
 
         String n = "#", o = "OUTLOOK", t = "TEMPERATURE", h = "HUMIDITY", w = "WIND", p = "PLAYTENNIS?";
         String test = "%3s";
-        for (int i = 0; i < printVals.length; i++) {
-            test += "%" + printVals[i] + "s";
+        for (int i = 0; i < printValues.length; i++) {
+            test += "%" + printValues[i] + "s";
         }
         test += "%13s";
         System.out.printf(test, n, o, t, h, w, p);
@@ -45,7 +45,7 @@ public class DataTypes {
         String res = String.format("%3s", rnum + ".");
         String[] darr = new String[data.length];
         for (int i = 0; i < data.length; i++) {
-            res += "%" + printVals[i] + "s";
+            res += "%" + printValues[i] + "s";
             switch(i) {
                 case 0:
                     darr[i] = out[(int)data[i]-1];

@@ -1,3 +1,5 @@
+package neuralnetwork;
+
 public class NetworkTools {
 
     public static double[] createArray(int size, double initValue) {
@@ -45,8 +47,8 @@ public class NetworkTools {
     }
 
     public static Integer[] randomValues(int size, int lower, int upper) {
-        lower--;
 
+        upper++;
         if (size > (upper-lower)) {
             return null;
         }
