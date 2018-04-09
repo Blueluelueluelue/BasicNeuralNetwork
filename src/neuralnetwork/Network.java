@@ -269,11 +269,25 @@ public class Network {
         return fileContent;
     }
 
+    public static String[] removeRepeats(String[] cand) {
+        ArrayList<String> temp = new ArrayList<>();
+        for (String aCand : cand) {
+            if (!temp.contains(aCand)) {
+                temp.add(aCand);
+            }
+        }
+        String[] res = new String[temp.size()];
+        for (int i = 0; i < res.length; i++) {
+            res[i] = temp.get(i);
+        }
+        return res;
+    }
+
     public static double[] removeRepeats(double[] cand) {
         ArrayList<Double> temp = new ArrayList<>();
-        for (int i = 0; i < cand.length; i++) {
-            if(!temp.contains(cand[i])) {
-                temp.add(cand[i]);
+        for (double aCand : cand) {
+            if (!temp.contains(aCand)) {
+                temp.add(aCand);
             }
         }
         double[] res = new double[temp.size()];
@@ -292,72 +306,155 @@ public class Network {
         return -1;
     }
 
+    public static int linearSearch(String[] arr, String term) {
+        for (int i = 0; i < arr.length; i++) {
+            if (arr[i].equals(term)) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    public static boolean areAllStrings(ArrayList<String[]> fileContent) {
+        boolean are = false;
+        for (String[] strarr: fileContent) {
+            for (String s: strarr) {
+                try {
+                    double d = Double.parseDouble(s);
+                    are = false;
+                } catch (NumberFormatException e) {
+                    are = true;
+                }
+            }
+        }
+        return are;
+    }
+
+    public static boolean isFirstRow(ArrayList<String[]> fileContent, boolean areStrings) {
+        String[] firstRow = fileContent.get(0);
+        boolean isFirst = false;
+        if (areStrings) {
+            String[] allRows = new String[(fileContent.size()-1) * fileContent.get(0).length];
+            for (int i = 1; i < fileContent.size(); i++) {
+                for (int j = 0; j < fileContent.get(i).length; j++) {
+                    allRows[(i-1)*fileContent.get(i).length + j] = fileContent.get(i)[j];
+                }
+            }
+            isFirst = true;
+            for (String a : firstRow) {
+                for (String b : allRows) {
+                    if (a.equals(b)) {
+                        isFirst = false;
+                        break;
+                    }
+                }
+                if (!isFirst)
+                    break;
+            }
+        } else {
+            ArrayList<String[]> temp = new ArrayList<>();
+            temp.add(firstRow);
+            isFirst = areAllStrings(temp);
+        }
+        return isFirst;
+    }
+
     public static TrainSet parseCSV(ArrayList<String[]> fileContent) {
+        TrainSet set;
+        double[][] fileDouble;
+        if (areAllStrings(fileContent)) {
+            if (isFirstRow(fileContent, true)) {
+                fileContent.remove(0);
+            }
+            fileDouble = new double[fileContent.size()][fileContent.get(0).length];
+            for (int j = 0; j < fileContent.get(0).length; j++) {
+                String[] col = new String[fileContent.size()];
+                for (int i = 0; i < fileContent.size(); i++) {
+                    col[i] = fileContent.get(i)[j];
+                }
+                String[] distinctCol = removeRepeats(col);
+                double[] distinctColNum = new double[distinctCol.length];
+                for (int i = 0; i < distinctColNum.length; i++) {
+                    distinctColNum[i] = i + 1;
+                }
+                for (int i = 0; i < col.length; i++) {
+                    int index = linearSearch(distinctCol, col[i]);
+                    fileDouble[i][j] = distinctColNum[index];
+                }
+            }
+        } else {
+            if (isFirstRow(fileContent, false)) {
+                fileContent.remove(0);
+            }
+            fileDouble = new double[fileContent.size()][];
+            for (int i = 0; i < fileDouble.length; i++) {
+                fileDouble[i] = new double[fileContent.get(i).length];
+                for (int j = 0; j < fileDouble[i].length; j++) {
+                    fileDouble[i][j] = Double.parseDouble(fileContent.get(i)[j]);
+                }
+            }
+        }
+        return parseCSV(fileDouble);
+    }
+
+
+    public static TrainSet parseCSV(double[][] fileContent) {
 
         int targetSize;
-        double[] targetCands = new double[fileContent.size()];
+        double[] targetCands = new double[fileContent.length];
 
         for (int i = 0; i < targetCands.length; i++) {
-            String[] s = fileContent.get(i);
-            try {
-                targetCands[i] = Double.parseDouble(s[s.length-1]);
-            } catch (NumberFormatException e) {
-                System.out.println("File contains stuff which are not numbers");
-                e.printStackTrace();
-                return null;
-            }
+            double[] d = fileContent[i];
+            targetCands[i] = d[d.length-1];
         }
 
         double[] distinctTargets = removeRepeats(targetCands);
         targetSize = distinctTargets.length;
-        TrainSet set = new TrainSet(fileContent.get(0).length - 1, targetSize);
+        TrainSet set = new TrainSet(fileContent[0].length - 1, targetSize);
 
-        try {
-            for (int i = 0; i < fileContent.size(); i++) {
-                String[] s = fileContent.get(i);
-                double t = Double.parseDouble(s[s.length-1]);
-                double[] inputs = new double[s.length-1];
-                for (int j = 0; j < inputs.length; j++) {
-                    inputs[j] = Double.parseDouble(s[j]);
-                }
-                double[] targets = new double[distinctTargets.length];
-                int index = linearSearch(distinctTargets, t);
-                if (index != -1) {
-                    targets[index] = 1d;
-                }
-
-                set.addData(inputs, targets);
+        for (double[] d : fileContent) {
+            double t = d[d.length - 1];
+            double[] inputs = new double[d.length - 1];
+            System.arraycopy(d, 0, inputs, 0, inputs.length);
+            double[] targets = new double[distinctTargets.length];
+            int index = linearSearch(distinctTargets, t);
+            if (index != -1) {
+                targets[index] = 1d;
             }
-        } catch (NumberFormatException e) {
-            System.out.println("File contains stuff which are not numbers");
-            e.printStackTrace();
-            return null;
+            set.addData(inputs, targets);
         }
-
         return set;
     }
 
 
     public static void main(String[] args) {
-        String path = new File("").getAbsolutePath() + "/res/testCSV.csv";
-        String path2 = new File("").getAbsolutePath() + "/res/test2CSV.csv";
-
+        String abpath = new File("").getAbsolutePath();
+        //String path = abpath + "/res/testCSV.csv";
+        String path2 = abpath + "/res/test2CSV.csv";
         try {
+
             ArrayList<String[]> fileContent = loadCSV(path2);
-            for (String[] strarr : fileContent) {
+            TrainSet set = parseCSV(fileContent);
+            System.out.println(set);
+
+
+//            createTestCSV(path3, 2);
+
+            /*for (String[] strarr : fileContent) {
                 for (String s : strarr) {
                     System.out.print(s + " ");
                 }
                 System.out.println();
-            }
-            TrainSet set = parseCSV(fileContent);
-            if (set != null) {
+            }*/
+            /*System.out.println(isFirstRow(fileContent));*/
+            //TrainSet set = parseCSV(fileContent);
+            /*if (set != null) {
                 int in = set.INPUT_SIZE;
                 int out = set.OUTPUT_SIZE;
                 Network network = new Network(in, in - 1, in - 2, in / 2, out);
                 Mnist.trainData(network, set, 10, 500, 1000);
                 Mnist.testTrainSet(network, set.extractBatch(200), 10);
-            }
+            }*/
 
         } catch (Exception e) {
             e.printStackTrace();
