@@ -18,20 +18,6 @@ public class NetworkTools {
         return array;
     }
 
-    public static double[] createArray(int size, double initValue) {
-        if (size < 1) {
-            return null;
-        }
-
-        double[] arr = new double[size];
-
-        for (int i = 0; i < size; i++) {
-            arr[i] = initValue;
-        }
-        return arr;
-    }
-
-
     public static double[] createRandomArray(int size, double lowerBound, double upperBound) {
         if (size < 1) {
             return null;
@@ -83,9 +69,9 @@ public class NetworkTools {
     }
 
     public static <T extends Comparable<T>> boolean containsValue(T[] arr, T value) {
-        for (int i = 0; i < arr.length; i++) {
-            if (arr[i] != null) {
-                if (value.compareTo(arr[i]) == 0) {
+        for (T anArr : arr) {
+            if (anArr != null) {
+                if (value.compareTo(anArr) == 0) {
                     return true;
                 }
             }

@@ -92,47 +92,71 @@ public class Network {
     }
 
     public void train(TrainSet set, int loops, int batchSize) {
+
+        // If the input and target size are not what we expect then the data is not usable and we can't work with it
         if(set.INPUT_SIZE != INPUT_SIZE || set.OUTPUT_SIZE != OUTPUT_SIZE) return;
+
+        // Repeat training procedure loops many times
         for(int i = 0; i < loops; i++) {
             TrainSet batch = set.extractBatch(batchSize);
+
+            // Going through each element of the batch and using that element to train the network
             for(int b = 0; b < batch.size(); b++) {
                 this.train(batch.getInput(b), batch.getOutput(b), learningRate);
             }
+
+            // In case the user wants to see the mean squared error at each loop
             System.out.println(MSE(batch));
         }
     }
 
-    public double MSE(double[] input, double[] target) {
+    private double MSE(double[] input, double[] target) {
         if (input.length != INPUT_SIZE || target.length != OUTPUT_SIZE) {
             return 0.0;
         }
+
+        // Populating the outputs[][] array so that it has values when we look inside it
         calculate(input);
+
         double sumE = 0;
+        // Definition of MSE is take average of the squares of the error
         for (int i = 0; i < target.length; i++) {
             double e = target[i] - outputs[NETWORK_SIZE-1][i];
             sumE += e*e;
         }
+
+        // Dividing by 2 * target.length because we used the derivative of output to calculate the error,
+        // So when we are calculating MSE we integrate, but since we first squared it, the integration
+        // Will be 1/2 times the expression
         return sumE / (2d * target.length);
     }
 
-    public double MSE(TrainSet set) {
+    private double MSE(TrainSet set) {
         double sumE = 0;
         for (int i = 0; i < set.size(); i++) {
             sumE += MSE(set.getInput(i), set.getOutput(i));
         }
+        // The above logic does not apply for the MSE in a TrainSet since we are already taking that into account
+        // When we call the MSE function inside the for loop.
         return sumE / set.size();
     }
 
     public void train(double[] inputs, double[] targets, double learningRate) {
+        // Training won't work if the input size and target size are unexpected
         if (targets.length != OUTPUT_SIZE || inputs.length != INPUT_SIZE) {
             return;
         }
+        // Populate the outputs[][]
         calculate(inputs);
+
+        // Populate the errors[][]
         backpropError(targets);
+
+        // Get new weights
         updateWeights(learningRate);
     }
 
-    public void backpropError(double[] targets) {
+    private void backpropError(double[] targets) {
 
         // Calculate errors for the output layer
         // Go through each neuron of the output layer
@@ -153,7 +177,7 @@ public class Network {
         }
     }
 
-    public void updateWeights(double lr) {
+    private void updateWeights(double lr) {
         for (int layer = 1; layer < NETWORK_SIZE; layer++) {
             for (int neuron = 0; neuron < NETWORK_LAYER_SIZE[layer]; neuron++) {
 
@@ -225,18 +249,19 @@ public class Network {
     public static void main(String[] args) {
         String abpath = new File("").getAbsolutePath();
         //String path = abpath + "/res/testCSV.csv";
-//        String path2 = abpath + "/res/SampleData.csv";
-        String path2 = abpath + "/res/test2CSV.csv";
+        String path2 = abpath + "/res/SampleData.csv";
+//        String path2 = abpath + "/res/test2CSV.csv";
         try {
             ArrayList<String[]> fileContent = loadCSV(path2);
             TrainSet set = CSV.parseCSV(fileContent);
-            Network network = new Network(set.INPUT_SIZE, 10, 9, 8, set.OUTPUT_SIZE);
-            TrainSet.trainData(network, set, 10, 1000, 30);
-//            CSV.createTestCSV(path2, 100);
-//            Network network = loadNetwork("res/NNFile");
-            TrainSet.testTrainSet(network, set, 10);
+//            Network network = new Network(set.INPUT_SIZE, 10, 9, 8, set.OUTPUT_SIZE);
 
-//            System.out.println(Arrays.toString(network.calculate(1.0, 1.0, 0.5, 0.5)));
+//            CSV.createTestCSV(path2, 100);
+            Network network = loadNetwork("res/NNFile");
+//            TrainSet.trainData(network, set, 10, 1000, 30);
+//            TrainSet.testTrainSet(network, set, 10);
+
+            System.out.println(Arrays.toString(network.calculate(1.0, 1.0, 0.5, 0.5)));
 
         } catch (Exception e) {
             e.printStackTrace();

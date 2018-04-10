@@ -57,8 +57,10 @@ public class TrainSet {
         if(size > 0 && size <= this.size()) {
             TrainSet set = new TrainSet(INPUT_SIZE, OUTPUT_SIZE);
             Integer[] ids = NetworkTools.randomValues(size,0, this.size() - 1);
-            for(Integer i: ids) {
-                set.addData(this.getInput(i), this.getOutput(i));
+            if (ids != null) {
+                for(Integer i: ids) {
+                    set.addData(this.getInput(i), this.getOutput(i));
+                }
             }
             return set;
         } else {
@@ -67,13 +69,13 @@ public class TrainSet {
     }
 
     public String toString() {
-        String s = "TrainSet ["+INPUT_SIZE+ " ; "+OUTPUT_SIZE+"]\n";
+        StringBuilder s = new StringBuilder("TrainSet [" + INPUT_SIZE + " ; " + OUTPUT_SIZE + "]\n");
         int index = 0;
         for(double[][] r:data) {
-            s += index +":   "+ Arrays.toString(r[0]) +"  >-||-<  "+Arrays.toString(r[1]) +"\n";
+            s.append(index).append(":   ").append(Arrays.toString(r[0])).append("  >-||-<  ").append(Arrays.toString(r[1])).append("\n");
             index++;
         }
-        return s;
+        return s.toString();
     }
 
     public int size() {

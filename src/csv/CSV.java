@@ -13,12 +13,20 @@ import java.util.Collections;
 public class CSV {
 
     public static void createTestCSV(String filePath, int rows) {
+        // factor defines how big the numbers will be in the csv file, factor of 10 will mean the numbers
+        // Are between 0 and 10
         double factor = 10.0;
+
+        // rowSize defines how many numbers there will be in a particular row, rowSize of 10 means
+        // There will be 10 numbers in each row
         int rowSize = (int) (Math.random() * 7) + 3;
-        int targetSize = (int) Math.log(rows) + 10;//(int) (Math.random() * (rows/100) - 2) + 2;
+
+        // targetSize defines the number of possible targets there are
+        int targetSize = (int) Math.log(rows) + 10;
         double[] targetPool = new double[targetSize];
 
         for (int i = 0; i < targetSize; i++) {
+            // The likelihood of a target repeating is extremely so we don't care
             targetPool[i] = Math.random() * factor;
         }
 
@@ -27,11 +35,15 @@ public class CSV {
             for (int i = 0; i < rows; i++) {
                 StringBuilder line = new StringBuilder();
                 for (int j = 0; j < rowSize - 1; j++) {
+                    // Numbers with more than 2 digits after decimal look weird
                     line.append(String.format("%1.2f,", Math.random() * factor));
                 }
+
+                // Each row gets a random target
                 int index = (int) (Math.random() * targetSize);
                 line.append(String.format("%1.2f\n", targetPool[index]));
 
+                // Since line is StringBuilder and not a String
                 wr.write(line.toString());
             }
             wr.close();
@@ -43,14 +55,17 @@ public class CSV {
     public static ArrayList<String[]> loadCSV(String filePath) {
         String splitBy = ",";
         String line;
+
+        // An ArrayList for flexibility
         ArrayList<String[]> fileContent = new ArrayList<>();
         try {
-
             BufferedReader br = new BufferedReader(new FileReader(filePath));
 
             while ((line = br.readLine()) != null) {
                 String[] row = line.split(splitBy);
-                fileContent.addAll(Collections.singleton(row));
+
+                // Since I want to maintain the String[] condition of each row
+                fileContent.add(row);
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -58,7 +73,7 @@ public class CSV {
         return fileContent;
     }
 
-    public static String[] removeRepeats(String[] cand) {
+    private static String[] removeRepeats(String[] cand) {
         ArrayList<String> temp = new ArrayList<>();
         for (String aCand : cand) {
             if (!temp.contains(aCand)) {
@@ -72,7 +87,7 @@ public class CSV {
         return res;
     }
 
-    public static double[] removeRepeats(double[] cand) {
+    private static double[] removeRepeats(double[] cand) {
         ArrayList<Double> temp = new ArrayList<>();
         for (double aCand : cand) {
             if (!temp.contains(aCand)) {
@@ -86,7 +101,7 @@ public class CSV {
         return res;
     }
 
-    public static int linearSearch(double[] arr, double term) {
+    private static int linearSearch(double[] arr, double term) {
         for (int i = 0; i < arr.length; i++) {
             if (arr[i] == term) {
                 return i;
@@ -95,7 +110,7 @@ public class CSV {
         return -1;
     }
 
-    public static int linearSearch(String[] arr, String term) {
+    private static int linearSearch(String[] arr, String term) {
         for (int i = 0; i < arr.length; i++) {
             if (arr[i].equals(term)) {
                 return i;
@@ -104,32 +119,39 @@ public class CSV {
         return -1;
     }
 
-    public static boolean areAllStrings(ArrayList<String[]> fileContent) {
-        boolean are = false;
-        for (String[] strarr: fileContent) {
-            for (String s: strarr) {
+    private static boolean areAllStrings(ArrayList<String[]> fileContent) {
+        boolean are = true;
+        for (String[] strArr: fileContent) {
+            for (String s: strArr) {
                 try {
                     double d = Double.parseDouble(s);
                     are = false;
                 } catch (NumberFormatException e) {
-                    are = true;
+                    // If I encountered even a single non-double then the content isn't "All Strings"
+                    return true;
                 }
             }
         }
         return are;
     }
 
-    public static boolean isFirstRow(ArrayList<String[]> fileContent, boolean areStrings) {
+    private static boolean isFirstRow(ArrayList<String[]> fileContent, boolean areStrings) {
         String[] firstRow = fileContent.get(0);
         boolean isFirst;
         if (areStrings) {
+            // Get all the rows of the content except the first row
             String[] allRows = new String[(fileContent.size()-1) * fileContent.get(0).length];
             for (int i = 1; i < fileContent.size(); i++) {
                 for (int j = 0; j < fileContent.get(i).length; j++) {
                     allRows[(i-1)*fileContent.get(i).length + j] = fileContent.get(i)[j];
                 }
             }
+
+            // Assume it is the first row
             isFirst = true;
+
+            // If I find any element inside the rest of the content which is equal to an element
+            // Inside the first row then the first row is not the "First Row"
             for (String a : firstRow) {
                 for (String b : allRows) {
                     if (a.equals(b)) {
@@ -137,12 +159,21 @@ public class CSV {
                         break;
                     }
                 }
+
+                // No need to continue looking if even a single element satisfies the condition
                 if (!isFirst)
                     break;
             }
         } else {
+            // Making this ArrayList since the areAllStrings method expects an ArrayList<String[]>
             ArrayList<String[]> temp = new ArrayList<>();
             temp.add(firstRow);
+
+            /* If the whole content isn't made up strings then only 2 possibilities are there
+             Either the whole content is made of double values
+             Or some of it is made of Strings but not all */
+
+            // So if the first row is made of all strings then it has to be the "First Row" else not
             isFirst = areAllStrings(temp);
         }
         return isFirst;

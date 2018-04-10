@@ -49,23 +49,17 @@ public class Attribute {
 		} else if (!name.equals(other.name))
 			return false;
 		if (value == null) {
-			if (other.value != null)
-				return false;
-		} else if (!value.equals(other.value))
-			return false;
-		return true;
-	}
-	
+            return other.value == null;
+		} else return value.equals(other.value);
+    }
+
 	public boolean equalAttribute(Attribute b){
-		if(this.name.equals(b.name)){
-			return true;
-		}
-		return false;
+		return this.name.equals(b.name);
 	}
 
-	public static Attribute parse(String c) throws Exception{
+	public static Attribute parse(String c) {
 	
-		if(c.indexOf(";") != -1){
+		if(c.contains(";")){
 			c = c.substring(0, c.length() - 1);
 		}
 		String[] split = c.split(":");

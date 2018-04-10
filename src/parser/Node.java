@@ -167,12 +167,7 @@ public class Node {
 		return this.childs;
 	}
 	
-	public boolean equals(Object o){
-		if(o.getClass() != this.getClass()){
-			return false;
-		} if(((Node)o).getName() != this.getName()){
-			return false;
-		}
-		return true;
+	public boolean equals(Object o) {
+		return o.getClass() == this.getClass() && ((Node) o).getName().equals(this.getName());
 	}
 }
