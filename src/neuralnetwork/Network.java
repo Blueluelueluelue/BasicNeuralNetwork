@@ -1,16 +1,17 @@
 package neuralnetwork;
 
+import csv.CSV;
 import parser.Attribute;
 import parser.Node;
 import parser.Parser;
 import parser.ParserTools;
 import trainset.TrainSet;
-import mnist.Mnist;
 
 import java.io.*;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
+
+import static csv.CSV.loadCSV;
 
 public class Network {
 
@@ -20,8 +21,6 @@ public class Network {
     private double[][] errors;
     private double[][] outputs_derivative;
     private double learningRate;
-    private double[] biasBounds;
-    private double[] weightsBounds;
 
     public final int[] NETWORK_LAYER_SIZE;
     public final int INPUT_SIZE;
@@ -41,8 +40,8 @@ public class Network {
         this.outputs_derivative = new double[NETWORK_SIZE][];
 
         this.learningRate = 0.3;
-        this.biasBounds = new double[]{-0.5, 0.7};
-        this.weightsBounds = new double[]{-1.0, 1.0};
+        double[] biasBounds = new double[]{-0.5, 0.7};
+        double[] weightsBounds = new double[]{-1.0, 1.0};
 
 
         for (int i = 0; i < NETWORK_SIZE; i++) {
@@ -221,239 +220,26 @@ public class Network {
         }
         p.close();
         return ne;
-
     }
-
-    public static void createTestCSV(String filePath, int rows) {
-        double factor = 10.0;
-        int rowSize = (int) (Math.random() * 7) + 3;
-        int targetSize = (int) Math.log(rows) + 10;//(int) (Math.random() * (rows/100) - 2) + 2;
-        double[] targetPool = new double[targetSize];
-
-        for (int i = 0; i < targetSize; i++) {
-            targetPool[i] = Math.random() * factor;
-        }
-
-        try {
-            FileWriter wr = new FileWriter(filePath);
-            for (int i = 0; i < rows; i++) {
-                String line = "";
-                for (int j = 0; j < rowSize - 1; j++) {
-                    line += String.format("%1.2f,", Math.random() * factor);
-                }
-                int index = (int) (Math.random() * targetSize);
-                line += String.format("%1.2f\n", targetPool[index]);
-
-                wr.write(line);
-            }
-            wr.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    public static ArrayList<String[]> loadCSV(String filePath) {
-        String splitBy = ",";
-        String line;
-        ArrayList<String[]> fileContent = new ArrayList<>();
-        try {
-
-            BufferedReader br = new BufferedReader(new FileReader(filePath));
-
-            while ((line = br.readLine()) != null) {
-                String[] row = line.split(splitBy);
-                fileContent.addAll(Collections.singleton(row));
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return fileContent;
-    }
-
-    public static String[] removeRepeats(String[] cand) {
-        ArrayList<String> temp = new ArrayList<>();
-        for (String aCand : cand) {
-            if (!temp.contains(aCand)) {
-                temp.add(aCand);
-            }
-        }
-        String[] res = new String[temp.size()];
-        for (int i = 0; i < res.length; i++) {
-            res[i] = temp.get(i);
-        }
-        return res;
-    }
-
-    public static double[] removeRepeats(double[] cand) {
-        ArrayList<Double> temp = new ArrayList<>();
-        for (double aCand : cand) {
-            if (!temp.contains(aCand)) {
-                temp.add(aCand);
-            }
-        }
-        double[] res = new double[temp.size()];
-        for (int i = 0; i < res.length; i++) {
-            res[i] = temp.get(i);
-        }
-        return res;
-    }
-
-    public static int linearSearch(double[] arr, double term) {
-        for (int i = 0; i < arr.length; i++) {
-            if (arr[i] == term) {
-                return i;
-            }
-        }
-        return -1;
-    }
-
-    public static int linearSearch(String[] arr, String term) {
-        for (int i = 0; i < arr.length; i++) {
-            if (arr[i].equals(term)) {
-                return i;
-            }
-        }
-        return -1;
-    }
-
-    public static boolean areAllStrings(ArrayList<String[]> fileContent) {
-        boolean are = false;
-        for (String[] strarr: fileContent) {
-            for (String s: strarr) {
-                try {
-                    double d = Double.parseDouble(s);
-                    are = false;
-                } catch (NumberFormatException e) {
-                    are = true;
-                }
-            }
-        }
-        return are;
-    }
-
-    public static boolean isFirstRow(ArrayList<String[]> fileContent, boolean areStrings) {
-        String[] firstRow = fileContent.get(0);
-        boolean isFirst = false;
-        if (areStrings) {
-            String[] allRows = new String[(fileContent.size()-1) * fileContent.get(0).length];
-            for (int i = 1; i < fileContent.size(); i++) {
-                for (int j = 0; j < fileContent.get(i).length; j++) {
-                    allRows[(i-1)*fileContent.get(i).length + j] = fileContent.get(i)[j];
-                }
-            }
-            isFirst = true;
-            for (String a : firstRow) {
-                for (String b : allRows) {
-                    if (a.equals(b)) {
-                        isFirst = false;
-                        break;
-                    }
-                }
-                if (!isFirst)
-                    break;
-            }
-        } else {
-            ArrayList<String[]> temp = new ArrayList<>();
-            temp.add(firstRow);
-            isFirst = areAllStrings(temp);
-        }
-        return isFirst;
-    }
-
-    public static TrainSet parseCSV(ArrayList<String[]> fileContent) {
-        double[][] fileDouble;
-
-        for (String[] aFileContent : fileContent) {
-            for (int j = 0; j < aFileContent.length; j++) {
-                aFileContent[j] = aFileContent[j].toLowerCase().trim();
-            }
-        }
-
-        if (areAllStrings(fileContent)) {
-            if (isFirstRow(fileContent, true)) {
-                fileContent.remove(0);
-            }
-            fileDouble = new double[fileContent.size()][fileContent.get(0).length];
-            for (int j = 0; j < fileContent.get(0).length; j++) {
-                String[] col = new String[fileContent.size()];
-                for (int i = 0; i < fileContent.size(); i++) {
-                    col[i] = fileContent.get(i)[j];
-                }
-                String[] distinctCol = removeRepeats(col);
-                double[] distinctColNum = new double[distinctCol.length];
-                for (int i = 0; i < distinctColNum.length; i++) {
-                    distinctColNum[i] = i + 1;
-                }
-                for (int i = 0; i < col.length; i++) {
-                    int index = linearSearch(distinctCol, col[i]);
-                    fileDouble[i][j] = distinctColNum[index];
-                }
-            }
-        } else {
-            if (isFirstRow(fileContent, false)) {
-                fileContent.remove(0);
-            }
-            fileDouble = new double[fileContent.size()][];
-            for (int i = 0; i < fileDouble.length; i++) {
-                fileDouble[i] = new double[fileContent.get(i).length];
-                for (int j = 0; j < fileDouble[i].length; j++) {
-                    fileDouble[i][j] = Double.parseDouble(fileContent.get(i)[j]);
-                }
-            }
-        }
-        return parseCSV(fileDouble);
-    }
-
-
-    public static TrainSet parseCSV(double[][] fileContent) {
-
-        fileContent = NetworkTools.normalizeCols(fileContent);
-        int targetSize;
-        double[] targetCands = new double[fileContent.length];
-
-        for (int i = 0; i < targetCands.length; i++) {
-            double[] d = fileContent[i];
-            targetCands[i] = d[d.length-1];
-        }
-
-        double[] distinctTargets = removeRepeats(targetCands);
-        targetSize = distinctTargets.length;
-        TrainSet set = new TrainSet(fileContent[0].length - 1, targetSize);
-
-        for (double[] d : fileContent) {
-            double t = d[d.length - 1];
-            double[] inputs = new double[d.length - 1];
-            System.arraycopy(d, 0, inputs, 0, inputs.length);
-            double[] targets = new double[distinctTargets.length];
-            int index = linearSearch(distinctTargets, t);
-            if (index != -1) {
-                targets[index] = 1d;
-            }
-            set.addData(inputs, targets);
-        }
-        return set;
-    }
-
 
     public static void main(String[] args) {
         String abpath = new File("").getAbsolutePath();
         //String path = abpath + "/res/testCSV.csv";
-        String path2 = abpath + "/res/SampleData.csv";
-//        String path2 = abpath + "/res/test2CSV.csv";
+//        String path2 = abpath + "/res/SampleData.csv";
+        String path2 = abpath + "/res/test2CSV.csv";
         try {
-            /*ArrayList<String[]> fileContent = loadCSV(path2);
-            TrainSet set = parseCSV(fileContent);
-            Network network = new Network(set.INPUT_SIZE, 3, 3, 2, set.OUTPUT_SIZE);
-            Mnist.trainData(network, set, 10, 1000, 30);*/
-            Network network = loadNetwork("res/NNFile");
-            //Mnist.testTrainSet(network, set, 10);
+            ArrayList<String[]> fileContent = loadCSV(path2);
+            TrainSet set = CSV.parseCSV(fileContent);
+            Network network = new Network(set.INPUT_SIZE, 10, 9, 8, set.OUTPUT_SIZE);
+            TrainSet.trainData(network, set, 10, 1000, 30);
+//            CSV.createTestCSV(path2, 100);
+//            Network network = loadNetwork("res/NNFile");
+            TrainSet.testTrainSet(network, set, 10);
 
-            System.out.println(Arrays.toString(network.calculate(1.0, 1.0, 0.5, 0.5)));
+//            System.out.println(Arrays.toString(network.calculate(1.0, 1.0, 0.5, 0.5)));
 
         } catch (Exception e) {
             e.printStackTrace();
         }
-
-
     }
 }

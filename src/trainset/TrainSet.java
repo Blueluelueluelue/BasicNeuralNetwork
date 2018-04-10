@@ -1,5 +1,6 @@
 package trainset;
 
+import neuralnetwork.Network;
 import neuralnetwork.NetworkTools;
 
 import java.util.ArrayList;
@@ -14,6 +15,35 @@ public class TrainSet {
     public TrainSet(int INPUT_SIZE, int OUTPUT_SIZE) {
         this.INPUT_SIZE = INPUT_SIZE;
         this.OUTPUT_SIZE = OUTPUT_SIZE;
+    }
+
+    public static void trainData(Network network, TrainSet set, int epochs, int loops, int batchSize) {
+        for(int e = 0; e < epochs;e++) {
+            network.train(set, loops, batchSize);
+            System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>   "+ e + "   <<<<<<<<<<<<<<<<<<<<<<<<<<");
+            try {
+                network.saveNetwork("res/NNSaveFile");
+            } catch (Exception e1) {
+                e1.printStackTrace();
+            }
+        }
+    }
+
+    public static void testTrainSet(Network network, TrainSet set, int printSteps) {
+        int correct = 0;
+        for(int i = 0; i < set.size(); i++) {
+
+            double highest = NetworkTools.indexOfHighestValue(network.calculate(set.getInput(i)));
+            double actualHighest = NetworkTools.indexOfHighestValue(set.getOutput(i));
+            if(highest == actualHighest) {
+                correct ++ ;
+            }
+
+            if(i % printSteps == 0) {
+                System.out.println(i + ": " + (double)correct / (double) (i + 1));
+            }
+        }
+        System.out.println("Testing finished, RESULT: " + correct + " / " + set.size()+ "  -> " + (double)correct * 100/ (double)set.size() +" %");
     }
 
     public void addData(double[] in, double[] expected) {
