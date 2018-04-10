@@ -96,7 +96,7 @@ public class Network {
         if(set.INPUT_SIZE != INPUT_SIZE || set.OUTPUT_SIZE != OUTPUT_SIZE) return;
         for(int i = 0; i < loops; i++) {
             TrainSet batch = set.extractBatch(batchSize);
-            for(int b = 0; b < batchSize; b++) {
+            for(int b = 0; b < batch.size(); b++) {
                 this.train(batch.getInput(b), batch.getOutput(b), learningRate);
             }
             System.out.println(MSE(batch));
@@ -225,12 +225,13 @@ public class Network {
     }
 
     public static void createTestCSV(String filePath, int rows) {
+        double factor = 10.0;
         int rowSize = (int) (Math.random() * 7) + 3;
         int targetSize = (int) Math.log(rows) + 10;//(int) (Math.random() * (rows/100) - 2) + 2;
         double[] targetPool = new double[targetSize];
 
         for (int i = 0; i < targetSize; i++) {
-            targetPool[i] = Math.random();
+            targetPool[i] = Math.random() * factor;
         }
 
         try {
@@ -238,7 +239,7 @@ public class Network {
             for (int i = 0; i < rows; i++) {
                 String line = "";
                 for (int j = 0; j < rowSize - 1; j++) {
-                    line += String.format("%1.2f,", Math.random());
+                    line += String.format("%1.2f,", Math.random() * factor);
                 }
                 int index = (int) (Math.random() * targetSize);
                 line += String.format("%1.2f\n", targetPool[index]);
@@ -360,8 +361,14 @@ public class Network {
     }
 
     public static TrainSet parseCSV(ArrayList<String[]> fileContent) {
-        TrainSet set;
         double[][] fileDouble;
+
+        for (String[] aFileContent : fileContent) {
+            for (int j = 0; j < aFileContent.length; j++) {
+                aFileContent[j] = aFileContent[j].toLowerCase().trim();
+            }
+        }
+
         if (areAllStrings(fileContent)) {
             if (isFirstRow(fileContent, true)) {
                 fileContent.remove(0);
@@ -400,6 +407,7 @@ public class Network {
 
     public static TrainSet parseCSV(double[][] fileContent) {
 
+        fileContent = NetworkTools.normalizeCols(fileContent);
         int targetSize;
         double[] targetCands = new double[fileContent.length];
 
@@ -430,88 +438,22 @@ public class Network {
     public static void main(String[] args) {
         String abpath = new File("").getAbsolutePath();
         //String path = abpath + "/res/testCSV.csv";
-        String path2 = abpath + "/res/test2CSV.csv";
+        String path2 = abpath + "/res/SampleData.csv";
+//        String path2 = abpath + "/res/test2CSV.csv";
         try {
-
-            ArrayList<String[]> fileContent = loadCSV(path2);
+            /*ArrayList<String[]> fileContent = loadCSV(path2);
             TrainSet set = parseCSV(fileContent);
-            System.out.println(set);
+            Network network = new Network(set.INPUT_SIZE, 3, 3, 2, set.OUTPUT_SIZE);
+            Mnist.trainData(network, set, 10, 1000, 30);*/
+            Network network = loadNetwork("res/NNFile");
+            //Mnist.testTrainSet(network, set, 10);
 
-
-//            createTestCSV(path3, 2);
-
-            /*for (String[] strarr : fileContent) {
-                for (String s : strarr) {
-                    System.out.print(s + " ");
-                }
-                System.out.println();
-            }*/
-            /*System.out.println(isFirstRow(fileContent));*/
-            //TrainSet set = parseCSV(fileContent);
-            /*if (set != null) {
-                int in = set.INPUT_SIZE;
-                int out = set.OUTPUT_SIZE;
-                Network network = new Network(in, in - 1, in - 2, in / 2, out);
-                Mnist.trainData(network, set, 10, 500, 1000);
-                Mnist.testTrainSet(network, set.extractBatch(200), 10);
-            }*/
+            System.out.println(Arrays.toString(network.calculate(1.0, 1.0, 0.5, 0.5)));
 
         } catch (Exception e) {
             e.printStackTrace();
         }
 
-//        createTestCSV(path2, 20000);
 
-        /*for (String[] strarr : fileContent) {
-            for (String s : strarr) {
-                System.out.print(s + " ");
-            }
-            System.out.println();
-        }*/
-
-
-
-        /*Network network = new Network(4, 3, 3, 2);
-
-
-
-
-        System.out.println("--------------------------TRAINING DATA--------------------------");
-        DataTypes.printTopRow();
-
-        for (int i = 0; i < inputs.length; i++) {
-            DataTypes.printRow(i + 1, inputs[i]);
-            DataTypes.printTennis(network.calculate(inputs[i]));
-        }
-        System.out.println("--------------------------UNKNOWN DATA--------------------------");
-
-        for (int i = 0; i < newData.length; i++) {
-            DataTypes.printRow(i + 1, newData[i]);
-            DataTypes.printTennis(network.calculate(newData[i]));
-        }*/
-        //Network net = new Network(4,3,3,2);
-
-        /*TrainSet set = new TrainSet(4, 2);
-        set.addData(new double[]{0.1,0.2,0.3,0.4}, new double[]{0.9,0.1});
-        set.addData(new double[]{0.9,0.8,0.7,0.6}, new double[]{0.1,0.9});
-        set.addData(new double[]{0.3,0.8,0.1,0.4}, new double[]{0.3,0.7});
-        set.addData(new double[]{0.9,0.8,0.1,0.2}, new double[]{0.7,0.3});
-
-        net.train(set, 10000, 4);
-
-        for(int i = 0; i < 4; i++) {
-            System.out.println(Arrays.toString(net.calculate(set.getInput(i))) + net.MSE(set.getInput(i), set.getOutput(i)));
-        }
-        System.out.println(net.MSE(set));*/
-        /*for(int i = 0; i < 4; i++) {
-            System.out.println(Arrays.toString(net.calculate(set.getInput(i))));
-        }*/
-
-        /*Network network = new Network(4, 3, 3, 2);
-        try {
-            network.saveNetwork("res/NNFile");
-        } catch (Exception e) {
-            e.printStackTrace();
-        }*/
     }
 }

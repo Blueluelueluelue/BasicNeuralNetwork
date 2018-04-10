@@ -1,6 +1,22 @@
 package neuralnetwork;
 
+
 public class NetworkTools {
+
+    public static double[][] normalizeCols(double[][] array) {
+
+        for (int j = 0; j < array[0].length; j++) {
+            double colMax = array[0][j];
+            for (double[] anArray : array) {
+                colMax = anArray[j] > colMax ? anArray[j] : colMax;
+            }
+            for (int i = 0; i < array.length; i++) {
+                String temp = String.format("%1.2f", array[i][j] / colMax);
+                array[i][j] = Double.parseDouble(temp);
+            }
+        }
+        return array;
+    }
 
     public static double[] createArray(int size, double initValue) {
         if (size < 1) {
