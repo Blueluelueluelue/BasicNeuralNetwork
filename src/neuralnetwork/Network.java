@@ -11,7 +11,6 @@ import java.io.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 
-import static csv.CSV.loadCSV;
 
 public class Network {
 
@@ -252,17 +251,26 @@ public class Network {
         String path2 = abpath + "/res/SampleData.csv";
 //        String path2 = abpath + "/res/test2CSV.csv";
         try {
-            ArrayList<String[]> fileContent = loadCSV(path2);
-            TrainSet set = CSV.parseCSV(fileContent);
+            CSV c = new CSV(path2);
+            TrainSet set = c.getTrainSet();
 //            Network network = new Network(set.INPUT_SIZE, 10, 9, 8, set.OUTPUT_SIZE);
 
 //            CSV.createTestCSV(path2, 100);
             Network network = loadNetwork("res/NNFile");
 //            TrainSet.trainData(network, set, 10, 1000, 30);
-//            TrainSet.testTrainSet(network, set, 10);
+            TrainSet.testTrainSet(network, set, 1);
 
-            System.out.println(Arrays.toString(network.calculate(1.0, 1.0, 0.5, 0.5)));
 
+            String[] s = new String[]{"rainy", "cool", "high", "weak"};
+//            System.out.println(Arrays.toString(c.evaluate(network, s)));
+            String[] e = c.evaluate(network, s);
+            System.out.print("Your Input: ");
+            for (int i = 0; i < e.length - 1; i++) {
+                System.out.print(c.getTopRow()[i] + ": " + e[i] + ", ");
+            }
+            System.out.println("\nPrediction: " + e[e.length-1]);
+            /*String[] s = new String[]{"1.0", "1.0", "0.5", "0.5", "2.1", "0.2"};
+            System.out.println(Arrays.toString(c.evaluate(network, s)));*/
         } catch (Exception e) {
             e.printStackTrace();
         }

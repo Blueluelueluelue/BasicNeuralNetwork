@@ -1,5 +1,7 @@
 package csv;
 
+
+import neuralnetwork.Network;
 import neuralnetwork.NetworkTools;
 import trainset.TrainSet;
 
@@ -8,9 +10,57 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collections;
+import java.util.Hashtable;
 
 public class CSV {
+
+    private final TrainSet trainSet;
+    private String[] distinctTargets;
+    private String[] topRow;
+    private ArrayList<Hashtable<String, Double>> inputsTable;
+
+    public TrainSet getTrainSet() {
+        return trainSet;
+    }
+
+    public String[] getTopRow() {
+        return topRow;
+    }
+
+    public CSV(String filePath) {
+        inputsTable = new ArrayList<>();
+        topRow = null;
+        trainSet = loadCSV(filePath);
+    }
+
+    public String[] evaluate(Network network, String[] inputs) {
+        double[] doubleInputs = new double[inputs.length];
+        ArrayList<String[]> in = new ArrayList<>();
+        for (String s : inputs) {
+            String[] strArr = new String[1];
+            strArr[0] = s;
+            in.add(strArr);
+        }
+        if (areAllStrings(in)) {
+            for (int i = 0; i < inputs.length ; i++) {
+                doubleInputs[i] = inputsTable.get(i).get(inputs[i]);
+            }
+        } else {
+            for (int i = 0; i < inputs.length; i++) {
+                try {
+                    doubleInputs[i] = Double.parseDouble(inputs[i]);
+                } catch (NumberFormatException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+        double[] guess = network.calculate(doubleInputs);
+        String[] result = new String[inputs.length + 1];
+        result[result.length - 1] = distinctTargets[NetworkTools.indexOfHighestValue(guess)];
+        System.arraycopy(inputs, 0, result, 0, inputs.length);
+        return result;
+    }
+
 
     public static void createTestCSV(String filePath, int rows) {
         // factor defines how big the numbers will be in the csv file, factor of 10 will mean the numbers
@@ -52,7 +102,7 @@ public class CSV {
         }
     }
 
-    public static ArrayList<String[]> loadCSV(String filePath) {
+    private TrainSet loadCSV(String filePath) {
         String splitBy = ",";
         String line;
 
@@ -70,7 +120,7 @@ public class CSV {
         } catch (IOException e) {
             e.printStackTrace();
         }
-        return fileContent;
+        return parseCSV(fileContent);
     }
 
     private static String[] removeRepeats(String[] cand) {
@@ -179,7 +229,7 @@ public class CSV {
         return isFirst;
     }
 
-    public static TrainSet parseCSV(ArrayList<String[]> fileContent) {
+    private TrainSet parseCSV(ArrayList<String[]> fileContent) {
         double[][] fileDouble;
 
         for (String[] aFileContent : fileContent) {
@@ -190,15 +240,26 @@ public class CSV {
 
         if (areAllStrings(fileContent)) {
             if (isFirstRow(fileContent, true)) {
-                fileContent.remove(0);
+                topRow = fileContent.remove(0);
             }
+
             fileDouble = new double[fileContent.size()][fileContent.get(0).length];
+
             for (int j = 0; j < fileContent.get(0).length; j++) {
                 String[] col = new String[fileContent.size()];
+                Hashtable<String, Double> hashtable = new Hashtable<>();
+
                 for (int i = 0; i < fileContent.size(); i++) {
                     col[i] = fileContent.get(i)[j];
                 }
                 String[] distinctCol = removeRepeats(col);
+
+                // Populating the global distinctTargets array
+                if (j == fileContent.get(0).length - 1) {
+                    this.distinctTargets = new String[distinctCol.length];
+                    System.arraycopy(distinctCol, 0, this.distinctTargets, 0, distinctCol.length);
+                }
+
                 double[] distinctColNum = new double[distinctCol.length];
                 for (int i = 0; i < distinctColNum.length; i++) {
                     distinctColNum[i] = i + 1;
@@ -207,24 +268,41 @@ public class CSV {
                     int index = linearSearch(distinctCol, col[i]);
                     fileDouble[i][j] = distinctColNum[index];
                 }
+
+                if (j == fileContent.get(0).length - 1)
+                    System.out.println("STOP");
+
+                if (j < fileContent.get(0).length - 1) {
+                    distinctColNum = NetworkTools.normalize(distinctColNum);
+                    for (int i = 0; i < distinctColNum.length; i++) {
+                        hashtable.put(distinctCol[i], distinctColNum[i]);
+                    }
+                    inputsTable.add(hashtable);
+                }
             }
         } else {
             if (isFirstRow(fileContent, false)) {
-                fileContent.remove(0);
+                topRow = fileContent.remove(0);
             }
             fileDouble = new double[fileContent.size()][];
+            String[] targetPool = new String[fileContent.size()];
+
             for (int i = 0; i < fileDouble.length; i++) {
                 fileDouble[i] = new double[fileContent.get(i).length];
+                targetPool[i] = String.valueOf(fileContent.get(i)[fileContent.get(i).length - 1]);
                 for (int j = 0; j < fileDouble[i].length; j++) {
                     fileDouble[i][j] = Double.parseDouble(fileContent.get(i)[j]);
                 }
             }
+
+            // Populating the global distinctTargets array
+            this.distinctTargets = removeRepeats(targetPool);
         }
         return parseCSV(fileDouble);
     }
 
 
-    public static TrainSet parseCSV(double[][] fileContent) {
+    private TrainSet parseCSV(double[][] fileContent) {
 
         fileContent = NetworkTools.normalizeCols(fileContent);
         int targetSize;
@@ -236,6 +314,7 @@ public class CSV {
         }
 
         double[] distinctTargets = removeRepeats(targetCands);
+
         targetSize = distinctTargets.length;
         TrainSet set = new TrainSet(fileContent[0].length - 1, targetSize);
 
